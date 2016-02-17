@@ -1,0 +1,163 @@
+{% if not is_xhr|default(false) %}
+{% extends "person/person_base.html" %}
+{% endif %}
+
+{% block section %}
+Patient Zero
+{# {{person.signature_name.decode("utf-8") }}#}
+{% endblock %}
+
+{% block content %}
+<script type="text/javascript" src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="https://cdn.rawgit.com/novus/nvd3/v1.8.1/build/nv.d3.min.js"></script>
+
+  <div class="container">
+    <div id="dashboard" class="row">
+        <div class="col-md-6">
+          <div class="box">
+            <div class="box-content">
+              <div class="box-header">
+                  <span>EEG Data - TP9 historic data </span>
+              </div>
+              <div class="box-content">
+                <div id='tp9'>
+                  <svg style="height:200px">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <div class="col-md-6">
+        <div class="box">
+          <div class="box-content">
+            <div class="box-header">
+                <span>EEG Data - TP10 historic data </span>
+            </div>
+            <div class="box-content">
+              <div id='tp10'>
+                <svg style="height:200px">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="dashboard" class="row">
+        <div class="col-md-6">
+          <div class="box">
+            <div class="box-content">
+              <div class="box-header">
+                  <span>EEG Data - FP1 historic data </span>
+              </div>
+              <div class="box-content">
+                <div id='fp1'>
+                  <svg style="height:200px">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <div class="col-md-6">
+        <div class="box">
+          <div class="box-content">
+            <div class="box-header">
+                <span>EEG Data - FP2 historic data </span>
+            </div>
+            <div class="box-content">
+              <div id='fp2'>
+                <svg style="height:200px">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="text/javascript">
+
+  var graphData = {{data|safe}};
+  var window_size = 4000
+
+  var tp9 = {
+      key : 'TP9',
+      values: [],
+      color: "#9fde0b"
+  };
+
+  var tp10 = {
+      key : 'TP10',
+      values: [],
+      color: '#eb9019'
+  };
+  var fp1 = {
+      key : 'FP1',
+      values: [],
+      color: '#C80000'
+  };
+
+  var fp2 = {
+      key : 'FP2',
+      values: [],
+      color: '#0048e8'
+  };
+
+  var chart = nv.models.lineWithFocusChart();
+
+  chart.yAxis
+      .tickFormat(d3.format(',.2f'));
+
+  chart.duration(0);
+
+  function loadGraph(chart_name) {
+    d3.select('#' + chart_name + ' svg')
+        .datum([window[chart_name]])
+        .call(chart);
+    nv.utils.windowResize(chart.update);
+    return chart;
+  };
+
+  function update_data(data) {
+    // This is Shameful coding ! I'm sorry!
+    for (i = 0; i < data.timestamps.length; i++) {
+      tp9.values.push({x: data.timestamps[i], y:data.tp9[i]});
+      tp10.values.push({x: data.timestamps[i], y:data.tp10[i]});
+      fp1.values.push({x: data.timestamps[i], y:data.fp1[i]});
+      fp2.values.push({x: data.timestamps[i], y:data.fp2[i]});
+    };
+
+    if (fp2.values.length >= window_size){
+      fp2.values = fp2.values.slice(fp2.values.length-window_size, fp2.values.length);};
+
+    if (fp1.values.length >= window_size){
+      fp1.values = fp1.values.slice(fp1.values.length-window_size, fp1.values.length);
+    };
+    if (tp10.values.length >= window_size){
+      tp10.values = tp10.values.slice(tp10.values.length-window_size, tp10.values.length);
+    };
+    if (tp9.values.length >= window_size){
+      tp9.values = tp9.values.slice(tp9.values.length-window_size, tp9.values.length);
+    };
+  }
+
+  update_data(graphData)
+
+  nv.addGraph(loadGraph("tp9"))
+  nv.addGraph(loadGraph("tp10"))
+  nv.addGraph(loadGraph("fp1"))
+  nv.addGraph(loadGraph("fp2"))
+
+  var source = new EventSource('http://localhost:5000/event_listener/patient1');
+  console.log("I'm listening");
+  source.onmessage = function (event) {
+      if (event.data != 1){
+        var data= JSON.parse(event.data);
+        update_data(data)
+        loadGraph("tp9");
+        loadGraph("tp10");
+        loadGraph("fp1");
+        loadGraph("fp2");
+      }
+  }
+</script>
+{% endblock %}

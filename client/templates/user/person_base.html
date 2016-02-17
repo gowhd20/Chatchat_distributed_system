@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block subsection %}
+<h6>
+<a href="{{ url_for('user.details', uid=1)}}">
+  Patient Details</a> -
+<a href="{{ url_for('user.live', uid=1)}}">
+  Live stream</a> -
+<a href="{{ url_for('user.histoy_detail', uid=1)}}">
+    Medical History</a> -
+<a href="{{ url_for('user.diagnostics', uid=1)}}">
+  Automatic diagnostics</a>
+</h6>
+{% endblock %}

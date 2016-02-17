@@ -1,0 +1,19 @@
+{% if not is_xhr|default(false) %}{% extends "base.html" %}{% endif -%}
+{% block content %}
+    <div id="dashboard">
+        <div class="box cpu">
+            <div class="box-header">
+                <span class="glyphicon glyphicon-fire"></span>
+                <span>Chat room</span>
+            </div>
+            <div class="box-content">
+                <table class="table">
+                    <tr>
+                        <td class="label-col">Here comes chat components</td>
+                        <td class="load" style="word-spacing: 10px;"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% if not is_xhr|default(false) %}
+{% extends "person/person_base.html" %}
+{% endif %}
+
+{% block section %}
+Patient Zero
+{# {{person.signature_name.decode("utf-8") }}#}
+{% endblock %}
+
+{% block content %}
+<script type="text/javascript" src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="https://cdn.rawgit.com/novus/nvd3/v1.8.1/build/nv.d3.min.js"></script>
+
+
+<div id="process" class="box">
+    <div class="box-header">
+        <span>Patient details</span>
+    </div>
+    <div class="box-content">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="active">
+                <a href="">Identity</a>
+            </li>
+            <li class="active">
+                <a href="">Medical history</a>
+            </li>
+            <li class="active">
+                <a href="">Latest Status</a>
+            </li>
+            <li class="active">
+                <a href="">Current Medication and treatments</a>
+            </li>
+        </ul>
+
+        <table class="table">
+        <tbody>
+              <tr>
+                  <td><strong>Name</strong></td>
+                  <td>John</td>
+              </tr>
+              <tr>
+                  <td><strong>Surname</strong></td>
+                  <td>Doe</td>
+              </tr>
+              <tr>
+                  <td><strong>Age</strong></td>
+                  <td>25</td>
+              </tr>
+              <tr>
+                  <td><strong>Sex</strong></td>
+                  <td>Male</td>
+              </tr>
+              <tr>
+                  <td><strong>Birthdate</strong>:</td>
+                  <td>11-01-1985</td>
+              </tr>
+              <tr>
+                  <td><strong>Gender</strong></td>
+                  <td>Male</td>
+              </tr>
+              <tr>
+                  <td><strong>Nationality</strong></td>
+                  <td>Finland</td>
+              </tr>
+        </tbody>
+      </table>
+
+      </div>
+</div>
+
+{% endblock %}
