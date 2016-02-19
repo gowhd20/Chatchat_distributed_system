@@ -1,4 +1,4 @@
-from settings import r
+from settings.settings import r
 import sys
 
 if __name__ == '__main__':

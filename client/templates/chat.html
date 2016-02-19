@@ -37,7 +37,7 @@
 					},
 					error : function(json)
 					{
-						window.alert(111);
+						window.alert('web-server has corrupted');
 						$('#board_content').html(json.responseText);
 						console.log(json);
 					}

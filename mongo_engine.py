@@ -6,4 +6,13 @@ app = Flask(__name__)
 app.config["MONGODB_SETTINGS"] = {'DB': "chatchat"}
 app.config["SECRET_KEY"] = "s2haejong"
 
+
+config = {
+	'host' : 'localhost',
+	'port' : 6379,
+	'db'   : 0,
+}
+
+channel = "exclusive"
+
 db = MongoEngine(app)
