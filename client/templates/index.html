@@ -1,16 +1,39 @@
 {% if not is_xhr|default(false) %}{% extends "base.html" %}{% endif -%}
 {% block content %}
+    <script src="{{ url_for(".static", filename="js/jquery.min.js") }}"></script>
+	<script>
+		$(function(){
+			$("#username").button();
+			$("#login_button").button();
+		});
+		function check_username()
+		{
+			console.log("jksdjflk")
+			if ($('#username').val().trim() == '')
+				console.log("eeeefff")
+				window.alert('Username cannot be blank!!!')
+				return false;
+				
+			return true;
+		}
+
+	</script>
+
     <div id="dashboard">
         <div class="box cpu">
             <div class="box-header">
                 <span class="glyphicon glyphicon-fire"></span>
-                <span>Chat room</span>
+                <span>Signin</span>
             </div>
             <div class="box-content">
                 <table class="table">
                     <tr>
-                        <td class="label-col">Here comes chat components</td>
+                        <td class="label-col">Create an ID</td>
                         <td class="load" style="word-spacing: 10px;"></td>
+						<form action="" method=post>
+							<input type="text" id="username" name="username" />
+							<button id="login_button">Login</button>
+						</form>
                     </tr>
                 </table>
             </div>

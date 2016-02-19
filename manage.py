@@ -22,6 +22,7 @@ app.register_blueprint(user_blueprint, url_prefix='/client/user')
 
 app.debug = True
 
+
 from gevent.wsgi import WSGIServer
 
 http_server = WSGIServer(('', 5555), app)

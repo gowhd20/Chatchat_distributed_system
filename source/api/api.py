@@ -37,6 +37,7 @@ def unix_to_datetime(x):
 
 class DataBlock(Resource):
     def get(self, todo_id):
+        print "i am here"
         return {todo_id: "None"}
 
     def post(self, todo_id):
@@ -61,7 +62,7 @@ class DataBlock(Resource):
                         return_message = PANIC
 
         return return_message, 201
-
+		
 
 @app.route('/event_listener/<tagID>')
 @cross_origin(origins='*', methods=['GET', 'POST', 'OPTIONS'],

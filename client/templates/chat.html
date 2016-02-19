@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<html>
+	<head>
+		<title>		Chatchat</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<script>
+			function send_chat(){
+				if ($('#chat_text').val().trim() == '')
+				{
+					window.alert('Chat text cannot be blank!!!')
+					return false;
+				}
+				
+				$.ajax({
+					type: "POST",
+					url: "send_chat",
+					data: { chat_text: $('#chat_text').val() },
+					cache: false,
+					dataType: "json",
+					success: function(json)
+					{
+						console.log(json);
+						if (json.signal === 'ADDED_TO_SERVER')
+						{
+							$('#notification_note').html('Added to resource server, get list');
+							get_text_list();
+						}
+						else
+						{
+							$('#notification_note').html('Added to queue');
+						}
+						
+						$('#chat_text').val('');
+						$('#notification_note').fadeIn();
+						$('#notification_note').fadeOut();
+					},
+					error : function(json)
+					{
+						window.alert(111);
+						$('#board_content').html(json.responseText);
+						console.log(json);
+					}
+				});
+				
+				
+				return false;
+			}
+		</script>
+	</head>
+	<body>
+		<h1>Chatchat</h1>
+		<div>your id: {{ data.username }}</div>
+		
+		<div class="ui-tabs-panel ui-widget-content ui-corner-bottom" style="float:left;width:80%;height:500px; font-family: Trebuchet MS,Tahoma,Verdana,Arial,sans-serif; font-size: 1.1em;">
+			<div class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all" style="padding:5px;">
+			Chatting board <button onclick="get_text_list();">get chat list</button>
+			<span id="notification_note" style="color:red;display:none;">Sent to server</span>
+			</div>
+			<div id="board_content" style="height:370px;overflow: scroll;">
+			
+			</div>
+			<div id="chat_form" style="margin-left:5px;">
+				<form action="send_chat" method=post onsubmit="return send_chat();">
+					<input type="text" id="chat_text" name="chat_text" style="width:90%" />
+					<button id="send_button">Send</button>
+				</form>
+			</div>
+		</div>
+
+		<div style="clear:both;"></div>
+	</body>
+</html>
+{% endblock %}
