@@ -29,15 +29,19 @@ def index():
         print data
         data = {'username' : data}
         #OpenChatChannel()
-        return render_template('chat.html', data=data)
+        
+        #event_stream('haejong')
+        render_template('chat.html', data=data)
+        return Response(event_stream('haejong'), mimetype="text/event_chat")
 
     return render_template('index.html', **data)
 
 
-@client.route('/', methods=['POST'])
+@client.route('/chat.html', methods=['GET', 'POST'])
 def OpenChatChannel():
     print "Connection started"
     resp = Response(event_stream('haejong'), mimetype="text/event_chat")
+    print resp
     return resp
 	
 
