@@ -3,14 +3,14 @@
     <script src="{{ url_for(".static", filename="js/jquery.min.js") }}"></script>
 	<script>
 		$(function(){
-			$("#username").button();
+			$("#user_name").button();
 			$("#login_button").button();
 		});
 		function check_username()
 		{
-			console.log("jksdjflk")
-			if ($('#username').val().trim() == '')
-				console.log("eeeefff")
+			console.log("ffff")
+			if ($('#user_name').val().trim() == '')
+				console.log("adf")
 				window.alert('Username cannot be blank!!!')
 				return false;
 				
@@ -31,7 +31,7 @@
                         <td class="label-col">Create an ID</td>
                         <td class="load" style="word-spacing: 10px;"></td>
 						<form action="" method=post>
-							<input type="text" id="username" name="username" />
+							<input type="text" id="user_name" name="user_name" />
 							<button id="login_button">Login</button>
 						</form>
                     </tr>

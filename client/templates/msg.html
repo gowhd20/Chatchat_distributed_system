@@ -5,33 +5,33 @@
 		<title>		Chatchat</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 		<script>
-			function send_chat(){
-				if ($('#chat_text').val().trim() == '')
+			function send_msg(){
+				if ($('#msg_txt').value().trim() == '')
 				{
 					window.alert('Chat text cannot be blank!!!')
 					return false;
 				}
-				
+				var txt = $('#msg_txt').value();
+				console.log(txt);
 				$.ajax({
 					type: "POST",
-					url: "send_chat",
-					data: { chat_text: $('#chat_text').val() },
+					url: "send_msg",
+					data: { chat_text: $('#msg_txt').value() },
 					cache: false,
 					dataType: "json",
 					success: function(json)
 					{
-						console.log(json);
 						if (json.signal === 'ADDED_TO_SERVER')
 						{
 							$('#notification_note').html('Added to resource server, get list');
-							get_text_list();
+							//get_text_list();
 						}
 						else
 						{
 							$('#notification_note').html('Added to queue');
 						}
 						
-						$('#chat_text').val('');
+						$('#chat_text').value('');
 						$('#notification_note').fadeIn();
 						$('#notification_note').fadeOut();
 					},
@@ -60,10 +60,10 @@
 			<div id="board_content" style="height:370px;overflow: scroll;">
 			
 			</div>
-			<div id="chat_form" style="margin-left:5px;">
-				<form action="send_chat" method=post onsubmit="return send_chat();">
-					<input type="text" id="chat_text" name="chat_text" style="width:90%" />
-					<button id="send_button">Send</button>
+			<div id="msg_form" style="margin-left:5px;">
+				<form action="send_msg" method=post onsubmit="return send_msg();">
+					<input type="text" id="msg_txt" name="msg_txt" style="width:90%" />
+					<button id="send_btn">Send</button>
 				</form>
 			</div>
 		</div>

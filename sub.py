@@ -1,8 +1,8 @@
-from settings import r
+from settings.settings import r
 import sys
 
 if __name__ == '__main__':
-    channel = "EXCLUSIVE"#sys.argv[1]
+    channel = sys.argv[1]
 
     pubsub = r.pubsub()
     pubsub.subscribe(channel)

@@ -2,14 +2,14 @@ from flask import Flask, request, render_template
 
 app = Flask(__name__)
  
-@app.route("/", methods=['POST', 'GET'])
+@app.route("/")
 def index():
     page = 'overview'
     data = {
         'page': page,
     }
     print 'are you here'
-    return render_template('login.html')
+    return render_template('tt.html')
  
 @app.route("/echo", methods=['POST'])
 def echo(): 

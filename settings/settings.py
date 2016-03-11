@@ -2,8 +2,8 @@ import redis
 
 config = {
     'host': 'localhost',
-    'port': 6379,
+    'port': 1380,
     'db': 0,
 }
 
-r = redis.StrictRedis(**config)
+r = redis.StrictRedis()
