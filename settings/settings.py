@@ -2,7 +2,7 @@ import redis
 
 config = {
     'host': 'localhost',
-    'port': 1380,
+    'port': 6379,
     'db': 0,
 }
 

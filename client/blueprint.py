@@ -3,16 +3,16 @@
 import logging
 import threading
 import callme
-import random, string
 
-
+from web_api import web_server_api
 from flask_restful import Resource
-
+from general_api import general_api
 from flask import render_template, Blueprint, Response, request, session
 
 from source.api.event_stream import event_stream
 from mongo_engine import config, channel
 global users
+
 users = {};
 
 client = Blueprint('client', __name__,
@@ -32,13 +32,13 @@ def index():
     if request.method == 'POST' and 'user_name' in request.form.keys() and request.form['user_name'].strip() != '':
         session['user_name'] = request.form['user_name'].strip()
         user_name = request.form['user_name'].strip()
+        data = {'user_name' : user_name}
         print data
-        data = {'user_name' : data}
         if user_name not in users:
-            users[user_name] = {'user_name':user_name, 'session_id':userRandomIdGenerator()}
+            users[user_name] = {'user_name':user_name, 'session_id':general_api.random_id_generator()}
             print users
 		
-        return render_template('msg.html', data=data)
+        return render_template('msg.html', response_data=data)
 
     return render_template('index.html', **data)
 
@@ -52,7 +52,7 @@ def send_msg():
     user_name = session['user_name']
     print session['user_name']
     if user_name not in users:
-        users[user_name] = {'user_name': user_name, 'session_id': userRandomIdGenerator()}
+        users[user_name] = {'user_name': user_name, 'session_id': general_api.random_id_generator()}
 
     returned_data = '';
     if request.form.get('msg_txt') is not None and str(request.form.get('msg_txt')).strip() != '':
@@ -69,8 +69,6 @@ def send_msg():
 
     return returned_data
 	
-	
-def userRandomIdGenerator(size=6, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
+
 	
 

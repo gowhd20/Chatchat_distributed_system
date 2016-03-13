@@ -12,18 +12,16 @@ from mongoengine import *
 
 connect('chatchat')
 
-logger = getLogger('watson.run')
+logger = getLogger('haejong.run')
 
 from mongo_engine import app
 
 app.register_blueprint(client,  url_prefix='/client')
 app.register_blueprint(user_blueprint, url_prefix='/client/user')
 
-
-app.debug = True
-
-
 from gevent.wsgi import WSGIServer
-
-http_server = WSGIServer(('', 1327), app)
-http_server.serve_forever()
+try:
+    http_server = WSGIServer(('', 1327), app)
+    http_server.serve_forever()
+except KeyboardInterrupt:
+    print 'Exiting'
