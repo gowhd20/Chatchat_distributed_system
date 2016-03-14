@@ -4,23 +4,25 @@
 	<head>
 		<title>		Chatchat</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
 		<script>
 			function send_msg(){
-				if ($('#msg_txt').value().trim() == '')
+				if ($('#msg_txt').val().trim() == '')
 				{
 					window.alert('Chat text cannot be blank!!!')
 					return false;
 				}
-				var txt = $('#msg_txt').value();
+				var txt = $('#msg_txt').val();
 				console.log(txt);
 				$.ajax({
 					type: "POST",
 					url: "send_msg",
-					data: { chat_text: $('#msg_txt').value() },
+					data: { msg_txt: $('#msg_txt').val() },
 					cache: false,
 					dataType: "json",
 					success: function(json)
 					{
+						console.log(json);
 						if (json.signal === 'ADDED_TO_SERVER')
 						{
 							$('#notification_note').html('Added to resource server, get list');
@@ -28,10 +30,12 @@
 						}
 						else
 						{
+							console.log(json);
+							console.log($('#msg_txt').val());
 							$('#notification_note').html('Added to queue');
 						}
 						
-						$('#chat_text').value('');
+						$('#msg_txt').val('');
 						$('#notification_note').fadeIn();
 						$('#notification_note').fadeOut();
 					},

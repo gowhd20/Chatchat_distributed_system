@@ -4,7 +4,7 @@ import logging
 import threading
 import callme
 
-from web_api import web_server_api
+from web_api import web_server_api, new_server_listener
 from flask_restful import Resource
 from general_api import general_api
 from flask import render_template, Blueprint, Response, request, session
@@ -63,11 +63,12 @@ def send_msg():
         #data
 		#returned_data = next_worker_proxy.use_server(next_worker['id']).add_text(username, chat_text)
         #log_data(next_worker['id'], 'user "' +username + '" send text')
-        #returned_data = json.dumps({"signal" : returned_data})
+        #returned_data = json.dumps({"signal" : 'ADDED_TO_SERVER'})
+        return_data = '{"action" : "ERROR", "data":{"error_message" : "Text cannot be blank!!!"}}'
     else:
-        returned_data = '{"action" : "ERROR", "data":{"error_message" : "Text cannot be blank!!!"}}' 
+        return_data = '{"action" : "ERROR", "data":{"error_message" : "Text cannot be blank!!!"}}' 
 
-    return returned_data
+    return return_data
 	
 
 	
