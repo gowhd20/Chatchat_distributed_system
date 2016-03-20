@@ -1,23 +1,17 @@
 from gevent.monkey import patch_all
 patch_all()
 
-from logging import getLogger
 from flask import Flask
 from flask.ext.mongoengine import MongoEngine
 from flask.ext.script import Manager, Server
 
-from client.blueprint import client
-from client.views.user import user_blueprint
-from mongoengine import *
-
-connect('chatchat')
-
-logger = getLogger('haejong.run')
+from web_server.web_server import web_server
+from web_server.views.user import user_blueprint
 
 from mongo_engine import app
 
-app.register_blueprint(client,  url_prefix='/client')
-app.register_blueprint(user_blueprint, url_prefix='/client/user')
+app.register_blueprint(web_server,  url_prefix='/web_server')
+app.register_blueprint(user_blueprint, url_prefix='/web_server/user')
 
 from gevent.wsgi import WSGIServer
 try:

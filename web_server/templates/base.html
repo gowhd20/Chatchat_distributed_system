@@ -20,7 +20,7 @@
         <div id="psdash">
             <div class="header">
                 <div class="logo">
-                    <a href="{{ url_for("client.index") }}">
+                    <a href="{{ url_for("web_server.index") }}">
                         <div class="app-name">
                           <img class="img-responsive" src="{{ url_for(".static", filename="images/logo.png")}}">
                         </div>
@@ -48,7 +48,7 @@
                     <div class="left-nav">
                         <ul class="menu">
                             <li {% if page == "overview" %}class="active"{% endif %}>
-                                <a href="{{ url_for("client.index") }}">
+                                <a href="{{ url_for("web_server.index") }}">
                                     <span class="glyphicon glyphicon-th"></span>
                                     <span class="option-text">Dashboard</span>
                                 </a>
