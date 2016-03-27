@@ -4,7 +4,8 @@ import logging
 import threading
 
 from web_api import web_server_api, new_client_listener
-
+from core import web_core
+from general_api import general_api as api
 from flask_restful import Resource
 from flask import render_template, Blueprint, Response, request, session, g
 
@@ -28,6 +29,7 @@ def before_request():
     #print request.cookies
     print request.cookies
 
+
 @web_server.route('/', methods=['POST', 'GET'])
 def index():
     global init
@@ -42,7 +44,7 @@ def index():
         data = {'user_name' : user_name}
         #print data
         if user_name not in users:
-            users[user_name] = {'user_name':user_name, 'session_id':general_api.random_id_generator()}
+            users[user_name] = {'user_name':user_name, 'session_id':api.random_id_generator()}
             #print users
 		
         return render_template('msg.html', response_data=data)
@@ -59,7 +61,7 @@ def send_msg():
     user_name = session['user_name']
     print session['user_name']
     if user_name not in users:
-        users[user_name] = {'user_name': user_name, 'session_id': general_api.random_id_generator()}
+        users[user_name] = {'user_name': user_name, 'session_id': api.random_id_generator()}
 
     returned_data = '';
     if request.form.get('msg_txt') is not None and str(request.form.get('msg_txt')).strip() != '':
