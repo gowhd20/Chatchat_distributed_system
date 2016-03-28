@@ -18,11 +18,11 @@ This project is centered on implementing key elements of the distributed systems
 ## Featured security
 	Encryption
 	
-![alt tag](https://raw.github.com/gowhd20/Chatchat_distributed_system/blob/master/snippet/encrypt_2.PNG)
-![alt tag](https://raw.github.com/gowhd20/Chatchat_distributed_system/blob/master/snippet/encrypt_1.PNG)
+![alt tag](https://github.com/gowhd20/Chatchat_distributed_system/blob/master/snippet/encrypt_2.PNG)
+![alt tag](https://github.com/gowhd20/Chatchat_distributed_system/blob/master/snippet/encrypt_1.PNG)
 
 	Decryption
 	
-![alt tag](https://raw.github.com/gowhd20/Chatchat_distributed_system/blob/master/snippet/decrypt_2.PNG)
-![alt tag](https://raw.github.com/gowhd20/Chatchat_distributed_system/blob/master/snippet/decrypt_1.PNG)
+![alt tag](https://github.com/gowhd20/Chatchat_distributed_system/blob/master/snippet/decrypt_2.PNG)
+![alt tag](https://github.com/gowhd20/Chatchat_distributed_system/blob/master/snippet/decrypt_1.PNG)
 	
