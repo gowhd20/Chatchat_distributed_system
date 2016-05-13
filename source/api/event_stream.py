@@ -1,7 +1,5 @@
 import redis
-import logging 
 
-logging.warning('are we here?')
 
 
 red = redis.StrictRedis()

@@ -1,46 +1,54 @@
-import datetime
-from flask import url_for
+####################################
+## Readable code versus less code ##
+####################################
+
+
 from mongoengine import *
+from web_server.general_api import general_api as api
 
 ## default app document info
 class ChatchatDocument(object):
-    created_at = ComplexDateTimeField(default=datetime.datetime.now(), required=True)
-    uid = StringField(max_length=255, required=True, primary_key=True)
+    created_at = ComplexDateTimeField(default=api._get_current_time(), 
+        required=True)
+    nid = StringField(max_length=255, required=True, primary_key=True)
 
     def get_absolute_url(self): 
-        return url_for('get', kwargs={"uid": self.uid})
+        return url_for('get', kwargs={"nid": self.nid})
+
 
 class NodeModel(EmbeddedDocument):
-    uid = StringField(max_length=255, required=True, primary_key=True)
+    nid = StringField(max_length=255, required=True, primary_key=True)
     public_key = StringField(max_length=500)
 
     meta = {
-        'indexes': ['uid'],
-        'ordering': ['uid'],
+        'indexes': ['nid'],
+        'ordering': ['nid'],
         'title': 'nodes',
         'slug': 'other app clients are here'
     }
+
 
 ## [BEGIN] app clinet database schema
 ## this data chunk should not be used by web server
 ## idealy this schema should be seperate from other schemas  
 class AppModel(Document, ChatchatDocument):
-    wsuid = StringField(max_length=255)
+    master_sid = StringField(max_length=255)
     public_key = StringField(max_length=500, required=True)
     server_public_key = StringField(max_length=500)
-    private_key_c = StringField(max_length=1000)
+    common_key_private = StringField(max_length=1000)
     private_key = StringField(max_length=1000, required=True)
-    is_token_holder = BooleanField(required=True, default=False)
-    timestamp_last_token_hold = DateTimeField()
-    timestamp_last_access = DateTimeField(default=datetime.datetime.now(), required=True)
+    last_access_to_res = DateTimeField()
+    last_work = DateTimeField()
+    last_access = DateTimeField(default=api._get_current_time(), 
+        required=True)
     nodes = ListField(EmbeddedDocumentField(NodeModel))
 
     def __unicode__(self):
-        return self.uid
+        return self.nid
 
     meta = {
         'allow_inheritance': True,
-        'indexes': ['-created_at', 'uid'],
+        'indexes': ['-created_at', 'nid'],
         'ordering': ['-created_at'],
         'title': 'About new app client',
         'slug': 'A new user joins in'
