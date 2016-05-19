@@ -15,9 +15,6 @@ class ChatchatDocument(object):
         required=True)
     sid = StringField(max_length=255, required=True, primary_key=True)
 
-    def get_absolute_url(self): 
-        return url_for('get', kwargs={"sid": self.sid})
-
 
 ## [BEGIN] Server database schema 
 class ChildrenModel(EmbeddedDocument):
@@ -46,8 +43,8 @@ class ServerLogModel(EmbeddedDocument):
     log = StringField(default="It's a wonderful day", max_length=1000)
 
     meta = {
-        'indexes': ['-timestamp_logged'],
-        'ordering': ['-timestamp_logged'],
+        'indexes': ['-timestamp'],
+        'ordering': ['-timestamp'],
         'title': 'server log',
     }
 
@@ -57,7 +54,6 @@ class WebServerModel(Document, ChatchatDocument):
     private_key = StringField(max_length=1000, required=True)
     common_key_public = StringField(max_length=500, required=True)
     common_key_private = StringField(max_length=1000, required=True)
-    last_access_to_res = StringField(max_length=255)
     server_log = ListField(EmbeddedDocumentField(ServerLogModel))
     children = ListField(EmbeddedDocumentField(ChildrenModel))
 
@@ -72,16 +68,21 @@ class WebServerModel(Document, ChatchatDocument):
 
 
 class Sessions(Document):
-    created_at = DateTimeField(default=api._get_current_time(), 
+    created_at = DateTimeField(
+        default=api._get_current_time(), 
         required=True)
     by = StringField(max_length=128)
-    ssid = StringField(required=True,
+    ssid = StringField(
+        required=True,
         max_length=128, 
         default=api._generate_session_id())
     user_data = StringField(max_length=500, required=True)
     expiration = DateTimeField(required=True)
-    modified = DateTimeField(default=api._get_current_time())
+    modified = DateTimeField(required=True,
+        default=api._get_current_time())
 
+
+logger = api.__get_logger('MongoSession')
 
 ##  users' session manager
 class MongoSession(CallbackDict, SessionMixin):
@@ -110,14 +111,14 @@ class MongoSessionInterface(SessionInterface):
         if ssid:
             stored_session = self.sessions.find_one({'ssid': ssid})
             #print "matched_session {}".format(stored_session)
-            """
+            
             if stored_session:
                 if stored_session.get('expiration') > api._get_current_time():
                     print "session id not expired: {}".format(ssid)
 
                     return MongoSession(
                         initial=stored_session['user_data'], 
-                        ssid=stored_session['ssid'])"""
+                        ssid=stored_session['ssid'])
 
         ssid = api._generate_session_id()
         print "new ssid: {}".format(ssid)
@@ -131,14 +132,14 @@ class MongoSessionInterface(SessionInterface):
             ## in web_server session is not defined
             print "delete cookies"      
             response.delete_cookie(app.session_cookie_name, domain=domain)
-            return
+            return session
         if self.get_expiration_time(app, session):
             expiration = self.get_expiration_time(app, session)
         else:
             expiration = api._get_expiration_time()
             print "expiration has been extended {}".format(expiration)
 
-        self.sessions.update_one(
+        res = self.sessions.update_one(
                           {'ssid': session.ssid},
                           {
                                '$set':{
@@ -150,9 +151,12 @@ class MongoSessionInterface(SessionInterface):
                                }
                            }, upsert=True)      ## upsert true
 
-        res = self.sessions.find()
-        for r in res:
-            print str(r) + "sessions"
+        if res.upserted_id:
+            logger.info("New session id added to the system")
+        elif res.matched_count == 1 and res.modified_count == 1:
+            logger.info("Existing session id updated")
+        else:
+            logger.critical("Something wrong with user session")
 
         response.set_cookie(app.session_cookie_name,
                             session.ssid,

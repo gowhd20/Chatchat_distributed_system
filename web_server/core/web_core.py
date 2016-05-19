@@ -25,6 +25,10 @@ class MasterServer(threading.Thread):
             server_api._refresh_common_key, 
             [self.sid]).start()
 
+        ## call for cleaning failed nodes
+        threading.Timer(api.CLEAN_GARBAGE_NODES, 
+        server_api._clean_failed_garbages, [self.sid]).start()  
+
         ## register the server to the message broker
         server = callme.Server(
             server_id=self.sid, 

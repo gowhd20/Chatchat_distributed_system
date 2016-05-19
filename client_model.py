@@ -12,9 +12,6 @@ class ChatchatDocument(object):
         required=True)
     nid = StringField(max_length=255, required=True, primary_key=True)
 
-    def get_absolute_url(self): 
-        return url_for('get', kwargs={"nid": self.nid})
-
 
 class NodeModel(EmbeddedDocument):
     nid = StringField(max_length=255, required=True, primary_key=True)
@@ -26,6 +23,17 @@ class NodeModel(EmbeddedDocument):
         'title': 'nodes',
         'slug': 'other app clients are here'
     }
+
+
+## for testing, this document will be shared by many app servers 
+## be aware of what it can cause 
+class CommentReplicaModel(Document):
+    by = StringField(max_length=128, required=True)
+    timestamp = DateTimeField(default=api._get_current_time(),  # act as actual primary key
+        required=True)
+    comment = StringField(max_length=5000, default="")
+    session_id = StringField(max_length=128)
+    nid = StringField(max_length=128)
 
 
 ## [BEGIN] app clinet database schema

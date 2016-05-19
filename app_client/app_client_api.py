@@ -7,53 +7,99 @@ import sys
 import json
 import callme
 import pika
+import pickle
+import dill
 sys.path.append(r'C:\Users\haejong\Desktop\Chatchat_distributed_system')  
-
+        
 from web_server.general_api import general_api as api
-from web_server.general_api import redis_queue as q
-from client_model import AppModel, NodeModel
-from shared_res_model import CommentListModel
+from web_server.general_api.connection_timeout import ConnTimeout
+#from web_server.general_api.redis_queue import Queue    
+from client_model import AppModel, NodeModel, CommentReplicaModel
+from shared_res_model import CommentModel#CommentListModel
 
+#q = Queue(db=api.REDIS_ID_NODE)
 
-MSG_FROM_NODES = "msg_from_nodes"
-HOST_ADDR = "192.168.10.102"
 logger = api.__get_logger('app_client.api.run')
-CHECK_HEARTBEAT = 5
-is_master_failing = False
-
-
+    
 ## RTC call
-def add_comment_request(data):
+def add_comments(**data):   ## [{"by":"nid", "comment":"comment"}, ...]
+    if not isinstance(data['content'], list):
+        data['content'] = [data['content']]
+
     if data['permission']:
-        collection = CommentListModel._get_collection()
-        res = collection.update(
-            {},
-            {
-                "$push":
-                {
-                    "comments":
-                    {
-                        "$each":data    ## [{"by":"nid", "comment":"comment"}, ...]
-                    }
-                }
-            },
-            upsert=True)
 
-        for i in CommentListModel.objects:
-            for j in i.comments:
-                print j.to_json()
+        for ele in data['content']:
+            # TODO: compare also 'by' to make sure or set primary key for 'created_at'
+            if not CommentModel.objects(timestamp=ele['created_at']):
+                CommentModel(
+                    by=ele['by'], 
+                    timestamp=ele['created_at'], 
+                    comment=ele['comment'],
+                    session_id=ele['session_id'],
+                    nid=data['nid']).save()
 
-        return {
-            "message":"inserted"
-            } if res['n']>0 and res['nModified']>0 or res['upserted'] else {
-                "message":"error"
+        response = []
+
+        logger.info("=========================COMMENTS========================")
+        for comment in CommentModel.objects.all():
+            logger.info(str(comment.timestamp)+" : "+comment.by+" : "+comment.comment)
+
+            #   prepare return data, return all the comment values from shared resource
+            response.append({
+                    'by':comment.by,
+                    'timestamp':comment.timestamp.isoformat(),
+                    'comment':comment.comment
+                })
+
+            #   if data is not already stored locally
+            if not CommentReplicaModel.objects(timestamp=comment.timestamp.isoformat()):
+                #   replicate
+                CommentReplicaModel(
+                    by=comment.by, 
+                    timestamp=comment.timestamp.isoformat(), 
+                    comment=comment.comment,
+                    session_id=comment.session_id,
+                    nid=comment.nid).save()
+
+        logger.info("=========================================================")
+
+        ## send response 'release' action to the master server
+        _send_direct_msg(data['sid'], {
+                'action':api._ACTION_KEYS[6],
+                'data':{
+                    'nid':data['nid']
                 }
+            })
+
+        return response
+
+
+    ## no permission to access to the shared resource
     else:
-        q.push(data['details'])
-        return {
-            "message":"cached"
-        }
+        logger.info("no access")
+        logger.info(data['content'])
 
+        for ele in data['content']:
+            CommentReplicaModel(
+                by=ele['by'], 
+                timestamp=ele['created_at'], 
+                comment=ele['comment'],
+                session_id=ele['session_id'],
+                nid=data['nid']).save()
+
+        response = []
+
+        ## display/return only locally stored data
+        logger.info("=========================COMMENTS========================")
+        for comment in CommentReplicaModel.objects.all():
+            logger.info(str(comment.timestamp)+" : "+comment.by+" : "+comment.comment)
+            response.append({
+                    'by':comment.by,
+                    'timestamp':comment.timestamp.isoformat(),
+                    'comment':comment.comment
+                })
+        logger.info("=========================================================")
+        return response
 
 
 ## nodes : list of other server nodes,
@@ -97,7 +143,7 @@ def _send_handshake_msg(nid, public_key, created_at, r_key):
         port=5672))
     channel = connection.channel()
     channel.exchange_declare(exchange=api.TOPIC_NEW_NODE,
-        type='topic',durable=True)
+        type='topic')
 
     channel.basic_publish(exchange=api.TOPIC_NEW_NODE,
                             routing_key=r_key,
@@ -122,78 +168,39 @@ def _send_direct_msg(routing_key, msg):
         host="localhost", 
         port=5672))
     channel = connection.channel()
-    channel.exchange_declare(exchange='direct_msg',
+    channel.exchange_declare(exchange=api.EXCHANGE_END_TO_END,
                              type='direct')
-    channel.basic_publish(exchange='direct_msg',
+    channel.basic_publish(exchange=api.EXCHANGE_END_TO_END,
                           routing_key=routing_key,
                           body=msg)
     connection.close()
 
 
-def _delete_node(target_nid, my_nid):
+def _delete_nodes(target_nids, my_nid):
     n_obj = AppModel.objects(nid=my_nid)
-    n_obj.update_one(pull__nodes__nid=target_nid)
-    n_obj.get().save()
-    print "deleted"
+
+    if not isinstance(target_nids, list):
+        if n_obj.update_one(pull__nodes__nid=target_nids)>0:
+            n_obj.get().save()
+            logger.info(target_nids+" deleted")
+        else:
+            logger.error("deleted failed")
+
+    else:
+        if n_obj.update(pull_all__nodes=
+            map(lambda x:{
+                'nid':str(x)
+            }, target_nids))>0:
+            n_obj.get().save()
+
+            logger.info("deleted many")
+        else:
+            logger.error("deleted many failed")
 
     nodes = n_obj.get().nodes
     for node in nodes:
         node_obj = json.loads(node.to_json())
         print "id: {}".format(node_obj['_id'])
-    #print AppModel.objects.to_json()
-
-
-def _store_server_info(server_data, nid):
-    #if AppModel.objects(nid=nid).scalar('master_sid').get() is None:
-    try:
-        AppModel.objects(nid=nid).update_one(
-            master_sid=server_data['server_id'],
-            server_public_key=server_data['server_public_key'],
-            common_key_private=server_data['common_key_private'])
-
-        print "server info updated"
-        _send_heartbeat(server_data['server_id'], nid)
-
-    except:
-        logger.error("this client has no information of master server")
- 
-
-def _send_heartbeat(server_id, nid):
-    retry = 0
-    while retry < api.MAX_TRY:
-        try:
-            proxy = callme.Proxy(
-                server_id=server_id, 
-                amqp_host="localhost", 
-                amqp_port=5672, 
-                timeout=3)
-            proxy.use_server(server_id).receive_heartbeats(nid, server_id)
-            # try again
-            retry = api.MAX_TRY
-
-            ## record heartbeat locally as well
-            AppModel.objects(nid=nid).update_one(last_access=api._get_current_time())
-            is_master_failing = False
-                # try daemon thread
-            #threading.Timer(3, _send_heart_beat).setDaemon(True)
-            threading.Timer(3.0, _send_heartbeat, [server_id, nid]).start()
-        except:
-            retry += 1
-            is_master_failing = True
-            print "Master server is not responding"
-            
-
-    ## default server failed
-    if is_master_failing:
-        #for ms in api.IDS:
-        #    try:
-
-        _send_handshake_msg(
-            nid, 
-            AppModel.objects(nid=nid).get().public_key, 
-            AppModel.objects(nid=nid).get().created_at.isoformat(), 
-            api.MN_RKEY+str(1))
-
 
 
 def _refresh_common_key(nid, key):
@@ -201,6 +208,4 @@ def _refresh_common_key(nid, key):
         return True
     else:
         return False
-
-
 

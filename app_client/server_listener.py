@@ -10,7 +10,7 @@ import callme
 
 from web_server.general_api import general_api as api
 from web_server.general_api.general_api import _ACTION_KEYS
-from client_model import AppModel
+from client_model import AppModel, CommentReplicaModel
 
 
 logger = api.__get_logger('app_listener.run')
@@ -42,17 +42,21 @@ class BroadcastListener(threading.Thread):
 
     def _on_message(self, ch, method, properties, body):
         #try:
+        print "fanout message"
         data = json.loads(api.decrypt_msg(
             AppModel.objects(nid=self.nid).scalar('common_key_private').get(), 
             body))     
-
+        #logger.info(data['action'])
         ## A node joined the system
         if (data['action'] == _ACTION_KEYS[1]):
             app_api._add_nodes(data['data'], self.nid)
 
-        ## A node left the system
+        ## delete nodes left the system
         elif (data['action'] == _ACTION_KEYS[2]):
-            app_api._delete_node(data['data']['nid'], self.nid)
+            if not isinstance(data['data'], list):
+                app_api._delete_nodes(data['data']['nid'], self.nid)
+            else:
+                app_api._delete_nodes(data['data'], self.nid)
 
         ## common key timeout, needs to be updated
         elif (data['action'] == _ACTION_KEYS[3]):
@@ -97,36 +101,30 @@ class MessageListener(threading.Thread):
 
     def _on_message(self, ch, method, properties, body):
         print "message received!"
-        print body
 
         data = json.loads(api.decrypt_msg(
             AppModel.objects(nid=self.nid).scalar('private_key').get(), 
             body))
 
-        print data    
+        print data  
         server_id = AppModel.objects(nid=self.nid).scalar('master_sid').get()
 
         ## access to the shared resource has been permitted
-        if (data['action'] == _ACTION_KEYS[4]):
-            ## TODO: encrypt message
-            proxy = callme.Proxy(
-                server_id=server_id, 
-                amqp_host="localhost",
-                amqp_port=5672, 
-                timeout=2)
+        if (data['action'] == _ACTION_KEYS[8]):
+            if server_id == data['by']:     #   for minimum integrity
+                #   this data format is to save contents by 'add_comments' function
+                #   send all data that is locally stored then it will be filtered to store to
+                #   the shared resource inside 'add_comments' function
+                data = {
+                    'permission':True,      #   this action would be only triggered with master server's permission
+                    'nid':self.nid,
+                    'sid':data['by'],
+                    'content':map(lambda x:{
+                            'by':x.by,
+                            'created_at':x.timestamp,
+                            'comment':x.comment,
+                            'session_id':x.session_id
+                        }, CommentReplicaModel.objects.all())
+                }
 
-            msg = [
-            {
-                "by":self.nid, 
-                "comment":"first comment haha"
-            },
-            {
-                "by":self.nid, 
-                "comment":"second comment haha"
-            }]
-
-            proxy.use_server(server_id).add_comment(msg)
-
-        #try:
-        #common_key = AppModel.objects(nid=self.nid).scalar('priva').get()
-        #data = json.loads(api.decrypt_msg(common_key, body))     
+                app_api.add_comments(**data)  

@@ -7,12 +7,13 @@
 import logging
 import threading
 import json
+import callme
 
 from core.web_core import MasterServer
 from general_api import general_api as api
-from flask_restful import Resource
-from flask import render_template, Blueprint, Response, request, session, g, make_response
+from flask import render_template, Blueprint, request, session, g, make_response, redirect, url_for
 from mongo_engine import app
+from flask.ext.cors import CORS
 
 from source.api.event_stream import event_stream
 
@@ -20,9 +21,9 @@ from web_api import web_server_api as server_api
 
 #from mongo_session import MongoSessionInterface
 
-from server_model import WebServerModel, ServerLogModel, Sessions, MongoSessionInterface
-from shared_res_model import CommentListModel, CommentDetailModel,SharedSessions   ## temp for db drop
-from client_model import AppModel       ## temp for db drop
+from server_model import WebServerModel, Sessions, MongoSessionInterface
+from shared_res_model import CommentModel, UserSessions   ## temp for db drop
+from client_model import AppModel, CommentReplicaModel       ## temp for db drop
 from mongoengine import *
 
 from .web_api.node_listener import NewNodeListener, NodeMessageListener
@@ -31,12 +32,15 @@ logger = api.__get_logger('web_server.run')
 
 ## [BEGIN] initiate the web server with connection to db named 'chatchat'
 connect('chatchat')
-#WebServerModel.drop_collection()
+#WebServerModel.drop_collection()   #tmemp
 #AppModel.drop_collection()  ## temp
-#CommentListModel.drop_collection()  ## temp
+#CommentModel.drop_collection()  ## temp
 #Sessions.drop_collection()  ## temp
-#SharedSessions.drop_collection() ## temp
+#UserSessions.drop_collection() ## temp
+#CommentReplicaModel.drop_collection() ## temp
 
+## allow cross-origin requests
+CORS(app)
 
 ## create web server
 private_key = api.generate_private_key()
@@ -74,40 +78,36 @@ mNodeMessageListener.start()
 mNewNodeListener = NewNodeListener(mWebServerModel.sid)
 mNewNodeListener.start()
 
-
 web_server = Blueprint('web_server', __name__,
                      static_folder='static',
                      template_folder='templates')
 
 #server_api._upload_user_sessions()
 
+@app.errorhandler(500)
+def server_error(e):
+    return """
+    An internal error occurred: <pre>{}</pre>
+    See logs for full stacktrace.
+    """.format(e), 500
+
+
 @web_server.before_request
 def before_request():
     g.user = None
-    #print g
-    #print request.cookies
-    #print "hey yoooooo"
+
     #print request.cookies.get('tasty_cookie')
 
 
 @web_server.after_request
 def call_after_request_callbacks(response):
-    #print response
-    #response.set_cookie("tasty_cookie", value="nacho")
-    #return response 
+ 
     return response
+
 
 @web_server.route('/', methods=['POST', 'GET'])
 def index():
-    print session
- 
-    page = 'overview'
-    resp = {
-        'page': page
-    }
-
     if request.method == 'POST' and 'user_name' in request.form.keys():
-
         if request.form['user_name'] == '':
             resp['errorMsg'] = "user name should not be an empty string"
             return app.make_response(render_template('index.html', **resp))
@@ -115,41 +115,77 @@ def index():
         else:
             uname = request.form['user_name']
             ## user id is not registered to the db
-            if(not 'user_name'in session):
-                session['user_name'] = uname
+            #if(not 'user_name' in session):
+            session['user_name'] = uname
 
-            resp = {
-                "user_name":uname,
-                }
+        resp = {'user_name':uname}
+        users = server_api.get_user_list(mWebServerModel.sid)
 
-        return app.make_response(render_template('msg.html', response=resp))
+        if users:
+            resp['active_users'] = users
 
-#    elif request.cookies.get('sid'):
-#        print "found cookie!!"
+        return app.make_response(render_template('msg.html', 
+            response=resp))
+
+    elif request.method == 'GET' and 'user_name' in session:
+        resp = {'user_name':session['user_name']}
+        users = server_api.get_user_list(mWebServerModel.sid)
+
+        if users:
+            resp['active_users'] = users
+
+        return app.make_response(render_template('msg.html', 
+            response=resp))
 
     return app.make_response(render_template('index.html'))
 
 
 @web_server.route('/send_msg', methods=['POST'])
 def send_msg():
-    global users
-	# check if the user is logged in, if not send redirect signal
-    if 'user' not in g or g.user is None:
-        return '{"action" : "REDIRECT", "data":{"href":"/"}}'
-    user_name = session['user_name']
-    print session['user_name']
-    if user_name not in users:
-        users[user_name] = {'user_name': user_name, 'session_id': api.random_id_generator()}
+	## user has not provided name for chat
+    text = request.form.get('content')
 
-    returned_data = '';
-    if request.form.get('msg_txt') is not None and str(request.form.get('msg_txt')).strip() != '':
-        text = str(request.form.get('msg_txt')).strip()
-        print text
+    if not 'user_name' in session:
+        return redirect(url_for('web_server.index'), 401)
 
-        return_data = '{"action" : "ERROR", "data":{"error_message" : "Text cannot be blank!!!"}}'
+    res = server_api.process_msg_add_request(
+        mWebServerModel.sid,
+        session['user_name'],
+        request.cookies.get(app.session_cookie_name),
+        text)
+
+    if 'errorMsg' in res:
+        url = 'http://'+api.HOST_ADDR+':'+str(api.PORT+1)+'/web_server'
+        return redirect(url, 503)
+        #return json.dumps(res), 503
+
     else:
-        return_data = '{"action" : "ERROR", "data":{"error_message" : "Text cannot be blank!!!"}}' 
+        ## return all history of comments
+        return json.dumps({
+                'response':"STORED",
+                'contents':res
+            }), 201
 
-    return return_data
+
+@web_server.route('/get_comments', methods=['GET'])
+def get_comments():
+    pass
+
+
+@web_server.route('/check_availability', methods=['GET'])
+def check_availability():
+    return str(server_api._check_availability(mWebServerModel.sid)), 200
+
+
+"""
+returned_data = '';
+if request.form.get('msg_txt') is not None and str(request.form.get('msg_txt')).strip() != '':
+    text = str(request.form.get('msg_txt')).strip()
+    print text
+
+    return_data = '{"action" : "ERROR", "data":{"error_message" : "Text cannot be blank!!!"}}'
+else:
+    return_data = '{"action" : "ERROR", "data":{"error_message" : "Text cannot be blank!!!"}}' 
+"""
 
 

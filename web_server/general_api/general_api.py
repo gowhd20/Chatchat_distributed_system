@@ -20,23 +20,41 @@ from Crypto.Cipher import AES, PKCS1_v1_5, PKCS1_OAEP
 from logging import getLogger
 
 
-_ACTION_KEYS = ('server_info', 'new_node_joined', 'remove_inactive_node', 'refresh_common_key', 
-    'aquired_access_to_res', 'add_new_comment')
+_ACTION_KEYS = ('server_info', 'new_node_joined', 'remove_inactive_node', 
+    'refresh_common_key', 'aquired_access_to_res', 'add_new_comment', 
+    'access_close', 'request_availability', 'access_permitted')
 
 MAX_TRY = 3
 EXCHANGE_FOR_ALL = "to_all_nodes"
+EXCHANGE_FOR_THIRDPARTY = "to_all_master_nodes"
 EXCHANGE_END_TO_END = "end_to_end"
-MN_RKEY = "master_node_"
+MN_RKEY = "channel_to_masterserver"
+TIMER_INS = "timer_instance"
 TOPIC_NEW_NODE = "topic_new_node"
-ID_OF_MN = 0
-IDS = [0 ,1, 2]
-PORT = 1327
-HOST_ADDR = "192.168.10.102"
+TOPIC_MASTER_NODES = "only_master_nodes"
+
+
+RES_HOLDER = "accessed_by"
+FAILED_NODES = "failed_nodes"
+
+## slave node
+CHECK_HEARTBEAT = 5
+_TIMEOUT = 10
+REDIS_ID_NODE = 10
+
 
 ## master node
-COMMON_KEY_TIMEOUT = 30
-INSPECTION_TIME_INTERVAL = 3
-TIME_DETERMINE_INACTIVE = 5     ## 5 sec => test purpose
+REDIS_ID = 0
+COMMON_KEY_TIMEOUT = 60
+INSPECTION_TIME_INTERVAL = 6
+TIME_DETERMINE_INACTIVE = 13     ## 5 sec => test purpose\
+TIME_DETERMINE_USER_ACTIVE = 60
+CLEAN_GARBAGE_NODES = 60*60
+
+PORT = 1327
+HOST_ADDR = "192.168.10.102"
+ID_OF_MN = 0
+SESSION_EXTENDED_BY = 30
 
 
 ## Advanced Encryption Standard
@@ -84,9 +102,8 @@ def _padding(txt):
 # decrypt text using key from aes algorithm
 def _decrypt_aes(key, iv, cipher_txt):
     cipher_txt = base64.b64decode(cipher_txt)
-    cipher = AES.new(key, AES.MODE_CBC, iv)         ## AES key must be --- happened
-    test =  cipher.decrypt(cipher_txt)
-    return _unpadding(test.decode('utf-8'))
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    return _unpadding(cipher.decrypt(cipher_txt).decode('utf-8'))
 
 
 ## Rivest, Shamir, Adleman
@@ -198,7 +215,7 @@ def _get_unix_from_datetime(dt):
     return calendar.timegm(dt.timetuple())
 
 def _get_expiration_time():
-    return datetime.datetime.now() + timedelta(hours=1)
+    return datetime.datetime.now() + timedelta(minutes=SESSION_EXTENDED_BY)
 
 
 #def _get_session_key():

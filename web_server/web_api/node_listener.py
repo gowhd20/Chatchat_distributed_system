@@ -5,20 +5,15 @@
 import pika
 import threading
 import json
-#import callme
+
 import web_server_api as server_api
 
-#from server_model import WebServerModel
 from web_server.general_api import general_api as api
-from web_server.general_api.general_api import _ACTION_KEYS
-#from mongoengine import *
 
 logger = api.__get_logger('new_clinet_listener.run')
 
 ## define exchange name for broadcasting message
 ## define handshake queue for handshaking with the new node
-
-HOST_ADDR = "192.168.10.102"
 
  
 ## listen to new nodes
@@ -28,7 +23,8 @@ class NewNodeListener(threading.Thread):
         super(NewNodeListener, self).__init__()
         
     def run(self):
-        connection = pika.BlockingConnection(pika.ConnectionParameters(
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(
             host="localhost",
             port=5672))
         channel = connection.channel()
@@ -43,23 +39,30 @@ class NewNodeListener(threading.Thread):
             queue=queue_name,
             routing_key=api.MN_RKEY+str(api.ID_OF_MN))     ## indicates master server number
 
+        ## NOT USED AT THE MOMENT
+        channel.queue_bind(
+            exchange=api.TOPIC_NEW_NODE,
+            queue=queue_name,
+            routing_key=api.TOPIC_MASTER_NODES)   
+
         print(' [*] Waiting for new nodes. To exit press CTRL+C')      
         channel.basic_consume(self._on_message,
                               queue=queue_name,
-                              no_ack=True)
+                              no_ack=False)
         channel.start_consuming()
 
 
     def _on_message(self, ch, method, properties, body):
         data = json.loads(body)
-        print data
-        ch.basic_ack(delivery_tag = method.delivery_tag)
-        if data['action'] == _ACTION_KEYS[1]:
+
+        if data['action'] == api._ACTION_KEYS[1]:
             server_api._handshake_to_new_node(data['data'], self.sid)
 
-        #elif data['action'] == _ACTION_KEYS[4]:
-        #    if server_api._coordinate_acc_to_res(data['data']['nid']):
-        #        server_api._broadcast_to_nodes(EXCHANGE_FOR_ALL, )
+        if data['action'] == api._ACTION_KEYS[7]:
+            logger.info("master node sent something")
+            if data['data']['sid'] != self.sid:
+                #server_api._broadcast_to_thirdparty(**{'sid':self.sid})
+                pass
 
 
 class NodeMessageListener(threading.Thread):
@@ -67,6 +70,7 @@ class NodeMessageListener(threading.Thread):
         self.sid = sid
         super(NodeMessageListener, self).__init__()
         
+
     def run(self):
         connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
@@ -94,11 +98,10 @@ class NodeMessageListener(threading.Thread):
 
     def _on_message(self, ch, method, properties, body):
         data = json.loads(body)
-        print data
 
-        #if data['action'] == _ACTION_KEYS[1]:
-        #    server_api._handshake_to_new_node(data['data'])
+        ## release lock on the shared resource
+        if data['action'] == api._ACTION_KEYS[6]:
+            server_api._coordinate_acc_to_res(sid=self.sid,
+                nid=data['data']['nid'],
+                action=api._ACTION_KEYS[6])
 
-        #elif data['action'] == _ACTION_KEYS[4]:
-        #    if server_api._coordinate_acc_to_res(data['data']['nid']):
-        #        server_api._broadcast_to_nodes(EXCHANGE_FOR_ALL, )

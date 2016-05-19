@@ -7,69 +7,95 @@
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
 		<script>
 			function send_msg(){
-				if ($('#msg_txt').val().trim() == '')
-				{
-					window.alert('Chat text cannot be blank!!!')
-					return false;
-				}
-				var txt = $('#msg_txt').val();
-				console.log(txt);
+
 				$.ajax({
 					type: "POST",
 					url: "send_msg",
-					data: { msg_txt: $('#msg_txt').val() },
+					data: { content: $('#chat_text').val() },
 					cache: false,
 					dataType: "json",
-					success: function(json)
-					{
-						console.log(json);
-						if (json.signal === 'ADDED_TO_SERVER')
-						{
-							$('#notification_note').html('Added to resource server, get list');
-							//get_text_list();
+					success: function(data){
+						if (data.response === "STORED"){
+							add_comment(data)
+							$('#notification_note').html(data.response);
+
 						}
-						else
-						{
-							console.log(json);
-							console.log($('#msg_txt').val());
+						else{
+							console.log(data);
 							$('#notification_note').html('Added to queue');
 						}
 						
-						$('#msg_txt').val('');
+						$('#chat_text').val('');
 						$('#notification_note').fadeIn();
 						$('#notification_note').fadeOut();
 					},
-					error : function(json)
-					{
-						window.alert('web-server has corrupted');
-						$('#board_content').html(json.responseText);
-						console.log(json);
+					error : function(data){
+						window.alert('web-server is not available');
+						$('#board_content').html(data.responseText);
+						console.log(data);
 					}
 				});
-				
-				
-				return false;
+				return false
 			}
+
+			function add_comment(data){
+				var str = '';
+				var tempArr = [];
+				//console.log(data)
+				data = JSON.parse(data.contents);
+
+				$( data ).each(function( i, e ) {
+					tempArr.push(
+						{
+							'timestamp':e.timestamp,//(new Date(e.timestamp).getTime() / 1000),
+							'by':e.by, 
+							'comment':e.comment
+						});
+				});
+				tempArr.sort(function(x, y){
+					return 	new Date(x.timestamp) - new Date(y.timestamp);
+				})
+
+				for(var i=0; i<tempArr.length; i++){
+					str += '<div>['+tempArr[i].timestamp+'] ['+ tempArr[i].by+']: '+tempArr[i].comment+'</div>';
+				}
+				//str += '<div>['+e.timestamp+'] ['+ e.by+']: '+e.comment+'</div>';
+				$('#board_content').html(str);
+				//$('#board_content').append(str);
+				//$('#board_content').css('top', '100');
+
+			}
+
 		</script>
 	</head>
 	<body>
 		<h1>Chatchat</h1>
-		<div>your id: {{ response.user_name }}</div>
-		
+		<div>your id: {{response.user_name}} </div>
 		<div class="ui-tabs-panel ui-widget-content ui-corner-bottom" style="float:left;width:80%;height:500px; font-family: Trebuchet MS,Tahoma,Verdana,Arial,sans-serif; font-size: 1.1em;">
-			<div class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all" style="padding:5px;">
-			Chatting board <button onclick="get_text_list();">get chat list</button>
-			<span id="notification_note" style="color:red;display:none;">Sent to server</span>
-			</div>
-			<div id="board_content" style="height:370px;overflow: scroll;">
+			<div class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all" style="padding:5px;">	 	
+				<b>Chatting board</b>
+				<div id="board_content" style="height:370px;overflow:scroll;">
+				<span id="notification_note" style="color:red;display:none;">Sent to server</span>
+				</div>
 			
-			</div>
+		</div>
 			<div id="msg_form" style="margin-left:5px;">
 				<form action="send_msg" method=post onsubmit="return send_msg();">
-					<input type="text" id="msg_txt" name="msg_txt" style="width:90%" />
+					<input type="text" id="chat_text" name="chat_text" style="width:90%" />
 					<button id="send_btn">Send</button>
 				</form>
 			</div>
+		</div>
+		<b>User list</b>
+		<div id="user_list" style="height:370px;overflow:scroll;">
+		{% if response.active_users %}
+		{% for user in response.active_users %}
+			<div> 
+				<b>ID:</b> {{user.user_name}}
+				<p><b>Activity:</b> {{user.modified}}</p>
+			</div>
+		{% endfor %}
+		{% endif %}
 		</div>
 
 		<div style="clear:both;"></div>
