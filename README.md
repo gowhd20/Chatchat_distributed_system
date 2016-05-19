@@ -14,6 +14,7 @@ This project is centered on implementing key elements of the distributed systems
 	- Python with many other plugins e.g)flask, callme proxy, Crypto, WSGI ... 
 	- Rabbitmq server
 	- MongoDB
+	- Redis
 	
 ## Featured security
 	Encryption
@@ -94,48 +95,121 @@ This project is centered on implementing key elements of the distributed systems
 		
 	
 ## Session handling
-	User information is stored in 'Sessions' document that has a lifetime of pre-defined timedelta value.
-	Session data is at first maintained by indivisual master nodes and once get pushed into shared resource database, it stays 
-	as long as someone decide to clean the whole system.
-	Each master node cleans its session data by pre-defined time of interval. If the data was cleaned, corresponding user loses his
-	data history and only way to get them back is retrieving from shared resource database.
-	User without history of previous session id will be assigned a new session id when logging in which has empty links to other documents.
+	User information is stored in 'Sessions' document that 
+	has a lifetime of pre-defined timedelta value.
+	
+	Session data is at first maintained by indivisual master nodes 
+	and once it get pushed into shared resource database, 
+	it stays as long as someone decide to clean the whole system.
+	
+	Each master node cleans its session data after 
+	it succeed to push the data into shared database. 
+	Data pushed into shared resource then shared to 
+	all other nodes based on master node's permission. 
+	User without history of previous session id will be assigned 
+	a new session id when logging in.
+	
+	
+## System logging
+	Each master node logs major commitment that it takes 
+	into the local database
 	
 	
 ## Fault tolerance and recovery
-	A number of master nodes(also alias coordinator) can run concurrently and by doing so, if master node in charge went down, other backup
-	master nodes can occupy the empty space. This will happen gracefully by slave nodes start looking for backup master node
-	when previous master node stop responding. Once it finds backup master node, it starts from registering as if it was a new slave node.
-	On the other side, if slave node stops responding, master node will try pre-defined times and decide to move on to another slave node.
-	Using session allows for users to restore all the data from the database in either shared resource database or master node in case closing blowser.
+	A number of master nodes(also alias coordinators) 
+	can run concurrently. 
+	By doing so, system is able to handle 
+	in case of one of the master nodes' failure.
+	Once it happened, involved worker nodes will automatically 
+	migrate to another master node that is active.
+	In a similar sense when new worker node joins to the system, 
+	it iteratively searches for only active master node.
+	When worker nodes recognize master node stop responding, 
+	it start registering to another master node, 
+	and behave same as if it was a new worker node.
+	
+	Also the end-users who interacting with 
+	front-end(master node/coordinator) are redirected to
+	another webpage while keeping all data in the shared database 
+	when current webpage turn unavailable.
+	
+	On the other side, if worker node stops responding,
+	master node will try over pre-defined times and then
+	eventually asign the task to another worker node 
+	in case of the worker node found failure.
+	failed nodes are collected by each master node 
+	and garbaged in every pre-defined time.
+	All worker node in the list of failed node 
+	will be omitted in every worker selection process.
+	Using session allows for users to restore all the data 
+	from either of shared resource database or worker node database.
 	
 		
 ## Security 
-	The system leverages AES and RSA(symmetric and asymmetric key) to keep the travling data secure.
-	Slave node sends its public key at the handshaking phase to the master node, and the master node handshakes back to the node with the data of
-	common-RSA key(for fanout message encryption/decryption) as well as general server info(ex, server's public_key, id).
-	Also master server refreshes common-RSA keys for every pre-defined time of interval and send them out to all slave nodes to update which would increase level of security.
+	The system leverages AES and RSA(symmetric and asymmetric key) 
+	to keep the travling data secure.
+	
+	Worker node sends its public key to the master node 
+	at the stage of handshake, 
+	and the master node handshakes back to the node 
+	with data of common-RSA key(for fanout message encryption/decryption) 
+	and general server info(ex, server's public_key, id)
+	encrypted by public key of the worker node.
+	
+	Also master server refreshes common-RSA keys 
+	for every pre-defined time of interval and
+	broadcast new keys to all worker nodes for updating.
 	
 	
 ## Communication
-	List of communication methods are as follows: publish/subscribe, RPC, fanout, direct messaging(downstream/upstream).
-	Master and slave nodes all have the same capacity of communication methods.
-	When a new node joins, present master node fanout broadcast messages to all slave nodes with its info using publish/subscribe communication method.
-	Slave nodes send/receive direct message to the master node as needed(ex, acquiring permission to shared resource). And also Master node responses 
-	with direct messaging.
-	All slave nodes keep up-to-date their status to the present master node by RPC.
-	Once again if any slave node has been disconnected, the present master node broadcast messages to all slave nodes and updates active node information in both
-	master and slave side of database.
+	List of communication methods this system is leveraging are as follows: 
+	publish/subscribe, RPC, fanout, direct messaging(downstream/upstream).
 	
+	Master and worker nodes all have the same capacity of 
+	communication within the nodes.
+	
+	When a new node joins or registered node leaves/fails master node 
+	notifies to all worker nodes 
+	with its info by publish/subscribe(fanout, asynchronous) 
+	communication method.
+	Worker nodes send/receive direct message to/from 
+	the master node as needed(direct messaging, asynchronous). 
+	
+	Assignment of workload from master node to worker node 
+	takes place through RPC method(direct communication, synchronous).
+
+	
+## Distributed synchronization
+	System selected centralized sychronization algorithm for 
+	accessing shared resource that is coordinator's permission based.
+
+	When there is a request from the end-user, master node caches 
+	it in the queue and later asign the task
+	to a worker node as soon as it takes turn from the queue 
+	otherwise master node(coordinator) asigns
+	the task instantaneously with permission to 
+	the shared resource to a node to process. 
 	
 ## Naming
-	Everything is dynamically handled from communication between nodes to database hits 
+	Worker nodes are introduced about information including 
+	other node's ids and RSA keys when it joins to a master node.
 	
 	
 ## Consistency and replication
-	All user history is replicated onto shared resource center thus, as long as the session id is valid, users can fully restore data from either of both database.
-	Any crashes from either slave node or master node is handled gracefully and automatically. Also data consistency is achived by enabling replicas to the shared resource database.
-	Each master node make own logs about major actions and store them into the database so that we expect it for clarifying what has happened while it's running. 
+	All data from user will be replicated/updated onto 
+	shared resource database with session id in which then 
+	users can fully restore data from 
+	in case of node failure or webpage crash.
+	
+	Any crashes from either worker or master node is 
+	handled gracefully by automated redirect and searching for
+	available nodes which will benefit 
+	both entities of end-user and worker node.
+	
+	Essential data is replicated locally in the node database 
+	therefore any requests can be handled gracefully
+	even without permission to access shared resources(weakly-consistent).
+	
 	
 ## Coding structure
 	object-oriented style
