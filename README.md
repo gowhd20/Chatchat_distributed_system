@@ -19,7 +19,7 @@ A simple chatting system that fulfils components of distributed system
 	
 ## Featured security
 	Encryption
-	
+	'''python
 	def _encrypt_aes(raw_txt):
 		## hash keeps integrity of data, not to be changed
 		## hash alias : message digest, checksum
@@ -94,7 +94,7 @@ A simple chatting system that fulfils components of distributed system
 			secured_data.pop('iv',[]), 
 			secured_data.pop('cipher_txt',[]))
 		
-	
+	'''
 ## Session handling
 	User information is stored in 'Sessions' document that 
 	has a lifetime of pre-defined timedelta value.
