@@ -19,7 +19,7 @@ A simple chatting system that fulfils components of distributed system
 	
 ## Featured security
 	Encryption
-'''python
+```python
 def _encrypt_aes(raw_txt):
 	key = hashlib.sha256(get_random_bytes(AES.block_size)).digest() # => a 32 byte string
 	padded_txt = _padding(raw_txt)
@@ -50,9 +50,9 @@ def encrypt_msg(public_key, message):
 			"cipher_txt":aes_encrypted_data['cipher_txt']
 		}), 
 		'secured_key':_encrypt_rsa(public_key, aes_encrypted_data['key'])})
-'''	
+```	
 Decryption
-'''python
+```python
 def _decrypt_aes(key, iv, cipher_txt):
 	cipher_txt = base64.b64decode(cipher_txt)
 	cipher = AES.new(key, AES.MODE_CBC, iv)         
@@ -79,7 +79,7 @@ def decrypt_msg(private_key, encrypted_msg):
 		secured_data.pop('iv',[]), 
 		secured_data.pop('cipher_txt',[]))
 	
-'''
+```
 ## Session handling
 	User information is stored in 'Sessions' document that 
 	has a lifetime of pre-defined timedelta value.
