@@ -72,6 +72,7 @@ class ConnTimeout(object):
 
 ## other approach, didn't like that has to keep the main thread running by force
 ## using while inside main
+##  http://code.activestate.com/recipes/496800-event-scheduling-threadingtimer/
 """
 import thread
 import threading

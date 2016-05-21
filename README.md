@@ -11,7 +11,7 @@ This project is centered on implementing key elements of the distributed systems
 	- Modern style communication between nodes
 	
 ## Tools
-	- Python with many other plugins e.g)flask, callme proxy, Crypto, WSGI ... 
+	- Python with many other plugins e.g)flask, callme, Crypto, WSGI ... 
 	- Rabbitmq server
 	- MongoDB
 	- Redis
@@ -213,3 +213,14 @@ This project is centered on implementing key elements of the distributed systems
 	
 ## Coding structure
 	object-oriented style
+	
+## Video demo
+	- redirecting end-user when current system is available
+	https://www.youtube.com/watch?v=L1taCQUoePE
+	
+	- fail-over as master system falls into failure
+	https://www.youtube.com/watch?v=75E4QDbO-Oo
+	
+	- system(master-slave) (un)registration
+	https://www.youtube.com/watch?v=PtDY8toMUPI
+	

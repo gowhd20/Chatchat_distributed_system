@@ -9,7 +9,7 @@ import callme
 import pika
 import pickle
 import dill
-sys.path.append(r'C:\Users\haejong\Desktop\Chatchat_distributed_system')  
+sys.path.append(r'C:\Users\haejong\Documents\distributed_system_2016\Chatchat')  
         
 from web_server.general_api import general_api as api
 from web_server.general_api.connection_timeout import ConnTimeout
