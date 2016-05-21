@@ -2,6 +2,8 @@
 A simple chatting system that fulfils components of distributed system
 (sychronization, security, replication, consistency, fault tolerance, fail-over).
 
+This system is built on web
+
 
 ## Realzed features
 	- Fault tolerance and recovery
@@ -12,13 +14,13 @@ A simple chatting system that fulfils components of distributed system
 	- Modern style communication between nodes
 	
 ## Tools
-	- Python with many other plugins e.g)flask, callme, Crypto, WSGI ... 
+	- Python 
 	- Rabbitmq server
 	- MongoDB
 	- Redis
 	
 ## Featured security
-	Encryption
+Encryption
 ```python
 def _encrypt_aes(raw_txt):
 	key = hashlib.sha256(get_random_bytes(AES.block_size)).digest() # => a 32 byte string
