@@ -216,12 +216,12 @@ A simple chatting system that fulfils components of distributed system
 	object-oriented style
 	
 ## Video demo
-- redirecting end-user when current system is available
+- redirecting end-user when current system is unavailable:
 https://www.youtube.com/watch?v=L1taCQUoePE
 	
-- fail-over as master system falls into failure
+- fail-over as master system falls into failure:
 https://www.youtube.com/watch?v=75E4QDbO-Oo
 	
-- system(master-slave) (un)registration
+- system(master-slave) (un)registration:
 https://www.youtube.com/watch?v=PtDY8toMUPI
 	
