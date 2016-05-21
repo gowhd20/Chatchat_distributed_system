@@ -1,6 +1,7 @@
-## Chatchat_distributed_system
-A simple chatting system that fulfils components of distributed system features.
-This project is centered on implementing key elements of the distributed systems
+## Motivation & Introduction
+A simple chatting system that fulfils components of distributed system
+(sychronization, security, replication, consistency, fault tolerance, fail-over).
+
 
 ## Realzed features
 	- Fault tolerance and recovery
@@ -215,12 +216,12 @@ This project is centered on implementing key elements of the distributed systems
 	object-oriented style
 	
 ## Video demo
-	- redirecting end-user when current system is available
-	https://www.youtube.com/watch?v=L1taCQUoePE
+- redirecting end-user when current system is available
+https://www.youtube.com/watch?v=L1taCQUoePE
 	
-	- fail-over as master system falls into failure
-	https://www.youtube.com/watch?v=75E4QDbO-Oo
+- fail-over as master system falls into failure
+https://www.youtube.com/watch?v=75E4QDbO-Oo
 	
-	- system(master-slave) (un)registration
-	https://www.youtube.com/watch?v=PtDY8toMUPI
+- system(master-slave) (un)registration
+https://www.youtube.com/watch?v=PtDY8toMUPI
 	
