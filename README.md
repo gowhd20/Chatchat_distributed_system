@@ -19,82 +19,82 @@ A simple chatting system that fulfils components of distributed system
 	
 ## Featured security
 	Encryption
-	'''python
-	def _encrypt_aes(raw_txt):
-		## hash keeps integrity of data, not to be changed
-		## hash alias : message digest, checksum
-		## encoding raw content is required if later it has to be compared with newly created hash by same input
-		key = hashlib.sha256(get_random_bytes(AES.block_size)).digest() # => a 32 byte string
-		padded_txt = _padding(raw_txt)
-		iv = Random.new().read(AES.block_size)   ## iv == nonce
-		cipher = AES.new(key, AES.MODE_CBC, iv)
-		return {'key': key, 'iv': iv, 'cipher_txt': base64.b64encode(cipher.encrypt(padded_txt))}  
+'''python
+def _encrypt_aes(raw_txt):
+	## hash keeps integrity of data, not to be changed
+	## hash alias : message digest, checksum
+	## encoding raw content is required if later it has to be compared with newly created hash by same input
+	key = hashlib.sha256(get_random_bytes(AES.block_size)).digest() # => a 32 byte string
+	padded_txt = _padding(raw_txt)
+	iv = Random.new().read(AES.block_size)   ## iv == nonce
+	cipher = AES.new(key, AES.MODE_CBC, iv)
+	return {'key': key, 'iv': iv, 'cipher_txt': base64.b64encode(cipher.encrypt(padded_txt))}  
+
+
+## Is needed as the size of message differs each time
+def _padding(txt):
+	return txt+(AES.block_size-len(txt)%AES.block_size)*chr(AES.block_size-len(txt)%AES.block_size)
+
+
+## asymetric key cryptography
+# encrypt key(symmetric key/AES) with receiver's public_key
+def _encrypt_rsa(public_key, key):
+	if type(public_key) is unicode:
+		public_key = RSA.importKey(public_key)
+	cipher_rsa = PKCS1_OAEP.new(public_key)
+	return cipher_rsa.encrypt(key)
 
 	
-	## Is needed as the size of message differs each time
-	def _padding(txt):
-		return txt+(AES.block_size-len(txt)%AES.block_size)*chr(AES.block_size-len(txt)%AES.block_size)
-	
-
-	## asymetric key cryptography
-	# encrypt key(symmetric key/AES) with receiver's public_key
-	def _encrypt_rsa(public_key, key):
-		if type(public_key) is unicode:
-			public_key = RSA.importKey(public_key)
-		cipher_rsa = PKCS1_OAEP.new(public_key)
-		return cipher_rsa.encrypt(key)
-
+## encrypt message between clients and web server
+def encrypt_msg(public_key, message):
+	if not isinstance(message, str):
+		message = json.dumps(message)
 		
-	## encrypt message between clients and web server
-	def encrypt_msg(public_key, message):
-		if not isinstance(message, str):
-			message = json.dumps(message)
-			
-		aes_encrypted_data = _encrypt_aes(message)
-		return pickle.dumps({'secured_data': pickle.dumps(
-			{
-				"iv":aes_encrypted_data['iv'], 
-				"cipher_txt":aes_encrypted_data['cipher_txt']
-			}), 
-			'secured_key':_encrypt_rsa(public_key, aes_encrypted_data['key'])})
-		
-	Decryption
+	aes_encrypted_data = _encrypt_aes(message)
+	return pickle.dumps({'secured_data': pickle.dumps(
+		{
+			"iv":aes_encrypted_data['iv'], 
+			"cipher_txt":aes_encrypted_data['cipher_txt']
+		}), 
+		'secured_key':_encrypt_rsa(public_key, aes_encrypted_data['key'])})
 	
-	# decrypt text using key from aes algorithm
-	def _decrypt_aes(key, iv, cipher_txt):
-		cipher_txt = base64.b64decode(cipher_txt)
-		cipher = AES.new(key, AES.MODE_CBC, iv)         
-		test =  cipher.decrypt(cipher_txt)
-		return _unpadding(test.decode('utf-8'))
+Decryption
+
+# decrypt text using key from aes algorithm
+def _decrypt_aes(key, iv, cipher_txt):
+	cipher_txt = base64.b64decode(cipher_txt)
+	cipher = AES.new(key, AES.MODE_CBC, iv)         
+	test =  cipher.decrypt(cipher_txt)
+	return _unpadding(test.decode('utf-8'))
 
 
-	## Rivest, Shamir, Adleman
-	## decrypt symetric key(AES) with private key(RSA)
-	## decrypt iv encrypted by sender's public key to decrypt message content was encrypted with aes
-	def _decrypt_rsa(private_key, secured_key):
-		if type(private_key) is unicode:
-			private_key = RSA.importKey(private_key)
-		cipher_rsa = PKCS1_OAEP.new(private_key)
-		## added for using PKCS1_v1_5, not needed when using PKCS1_OAEP
-		#dsize = SHA.digest_size
-		#sentinel = Random.new().read(AES.block_size+dsize)         # Let's assume that average data length is 16
-		## ------------------
-		return cipher_rsa.decrypt(secured_key)
+## Rivest, Shamir, Adleman
+## decrypt symetric key(AES) with private key(RSA)
+## decrypt iv encrypted by sender's public key to decrypt message content was encrypted with aes
+def _decrypt_rsa(private_key, secured_key):
+	if type(private_key) is unicode:
+		private_key = RSA.importKey(private_key)
+	cipher_rsa = PKCS1_OAEP.new(private_key)
+	## added for using PKCS1_v1_5, not needed when using PKCS1_OAEP
+	#dsize = SHA.digest_size
+	#sentinel = Random.new().read(AES.block_size+dsize)         # Let's assume that average data length is 16
+	## ------------------
+	return cipher_rsa.decrypt(secured_key)
+
+
+def _unpadding(txt):
+	return txt[:-ord(txt[len(txt)-1:])]	
+
+
+def decrypt_msg(private_key, encrypted_msg):
+	encrypted_msg = pickle.loads(encrypted_msg)
+	secured_data = pickle.loads(encrypted_msg.pop('secured_data',[]))
+	key = _decrypt_rsa(private_key, encrypted_msg.pop('secured_key',[]))
+	return _decrypt_aes(key, 
+		secured_data.pop('iv',[]), 
+		secured_data.pop('cipher_txt',[]))
 	
-	
-	def _unpadding(txt):
-		return txt[:-ord(txt[len(txt)-1:])]	
-
-
-	def decrypt_msg(private_key, encrypted_msg):
-		encrypted_msg = pickle.loads(encrypted_msg)
-		secured_data = pickle.loads(encrypted_msg.pop('secured_data',[]))
-		key = _decrypt_rsa(private_key, encrypted_msg.pop('secured_key',[]))
-		return _decrypt_aes(key, 
-			secured_data.pop('iv',[]), 
-			secured_data.pop('cipher_txt',[]))
-		
-	'''
+'''
 ## Session handling
 	User information is stored in 'Sessions' document that 
 	has a lifetime of pre-defined timedelta value.
