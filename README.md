@@ -88,12 +88,11 @@ def decrypt_msg(private_key, encrypted_msg):
 	
 	Session data is at first maintained by indivisual master nodes 
 	and once it get pushed into shared resource database, 
-	it stays as long as someone decide to clean the whole system.
+	stays there and shared to other systems.
 	
-	Each master node cleans its session data after 
-	it succeed to push the data into shared database. 
-	Data pushed into shared resource then shared to 
-	all other nodes based on master node's permission. 
+	Each master node cleans local session after 
+	pushing it into shared database. 
+	Shared data is accessed by the master node based on FIFO rule. 
 	User without history of previous session id will be assigned 
 	a new session id when logging in.
 	
@@ -105,21 +104,21 @@ def decrypt_msg(private_key, encrypted_msg):
 	
 ## Fault tolerance and recovery
 	A number of master nodes(also alias coordinators) 
-	can run concurrently. 
-	By doing so, system is able to handle 
-	in case of one of the master nodes' failure.
-	Once it happened, involved worker nodes will automatically 
-	migrate to another master node that is active.
+	can be running run concurrently. 
+	By doing so, the system is able to handle 
+	case of one of the master nodes' failure.
+	Once the failure happens, involved worker nodes will automatically 
+	migrate to another master node which is active.
 	In a similar sense when new worker node joins to the system, 
 	it iteratively searches for only active master node.
-	When worker nodes recognize master node stop responding, 
+	When worker nodes detect master node stopped responding, 
 	it start registering to another master node, 
-	and behave same as if it was a new worker node.
+	and then behave the same as if it was a new worker node.
 	
 	Also the end-users who interacting with 
 	front-end(master node/coordinator) are redirected to
 	another webpage while keeping all data in the shared database 
-	when current webpage turn unavailable.
+	when current webpage turns unavailable.
 	
 	On the other side, if worker node stops responding,
 	master node will try over pre-defined times and then
@@ -127,26 +126,24 @@ def decrypt_msg(private_key, encrypted_msg):
 	in case of the worker node found failure.
 	failed nodes are collected by each master node 
 	and garbaged in every pre-defined time.
-	All worker node in the list of failed node 
-	will be omitted in every worker selection process.
+	All worker nodes in the list of failed worker nodes 
+	will be omitted from every worker selection process.
 	Using session allows for users to restore all the data 
-	from either of shared resource database or worker node database.
+	from either shared resource database or worker node database.
 	
 		
 ## Security 
 	The system leverages AES and RSA(symmetric and asymmetric key) 
-	to keep the travling data secure.
+	together with nonce(initialization vector) to keep the travling data secure.
 	
 	Worker node sends its public key to the master node 
-	at the stage of handshake, 
-	and the master node handshakes back to the node 
+	at the stage of handshake, and then the master node handshakes back to the node 
 	with data of common-RSA key(for fanout message encryption/decryption) 
-	and general server info(ex, server's public_key, id)
-	encrypted by public key of the worker node.
+	and general information of the master node(ex, server's public_key, id)
+	encrypted by public key that the worker node just sent.
 	
-	Also master server refreshes common-RSA keys 
-	for every pre-defined time of interval and
-	broadcast new keys to all worker nodes for updating.
+	Also master server refreshes common-RSA keys by every pre-defined time of interval and
+	broadcast it to all worker nodes for updating.
 	
 	
 ## Communication
@@ -157,45 +154,35 @@ def decrypt_msg(private_key, encrypted_msg):
 	communication within the nodes.
 	
 	When a new node joins or registered node leaves/fails master node 
-	notifies to all worker nodes 
-	with its info by publish/subscribe(fanout, asynchronous) 
-	communication method.
-	Worker nodes send/receive direct message to/from 
-	the master node as needed(direct messaging, asynchronous). 
+	notifies to all worker nodes with its information 
+	by the method of publish/subscribe(fanout, asynchronous).
+	Worker nodes send/receive direct message to/from master node as needed(direct messaging, asynchronous). 
 	
-	Assignment of workload from master node to worker node 
-	takes place through RPC method(direct communication, synchronous).
+	Assignment of workload from master to worker node take place through RPC method(direct communication, synchronous).
 
 	
 ## Distributed synchronization
-	System selected centralized sychronization algorithm for 
+	The system has chosen centralized sychronization algorithm for 
 	accessing shared resource that is coordinator's permission based.
 
-	When there is a request from the end-user, master node caches 
-	it in the queue and later asign the task
-	to a worker node as soon as it takes turn from the queue 
-	otherwise master node(coordinator) asigns
-	the task instantaneously with permission to 
-	the shared resource to a node to process. 
+	When there is a request from the end-user, master node caches the task into the queue 
+	to asign later when the turn comes.
+	Otherwise master node(coordinator) asigns the task instantaneously to a worker node to process,
+	and the access permission become locked.
+
 	
 ## Naming
 	Worker nodes are introduced about information including 
-	other node's ids and RSA keys when it joins to a master node.
+	other nodes' ids and RSA keys when it joins to a master node.
 	
 	
 ## Consistency and replication
-	All data from user will be replicated/updated onto 
-	shared resource database with session id in which then 
-	users can fully restore data from 
-	in case of node failure or webpage crash.
+	All data from user will be replicated/updated onto shared resource database with session id in which then 
+	users can fully restore data from in case of node failure or webpage crash.
 	
-	Any crashes from either worker or master node is 
-	handled gracefully by automated redirect and searching for
-	available nodes which will benefit 
-	both entities of end-user and worker node.
+	Any crashes from either worker or master node are handled gracefully by automated redirection for the end-users. 
 	
-	Essential data is replicated locally in the node database 
-	therefore any requests can be handled gracefully
+	Essential data is replicated locally in the worker node's database thus any requests can be handled gracefully
 	even without permission to access shared resources(weakly-consistent).
 	
 	
