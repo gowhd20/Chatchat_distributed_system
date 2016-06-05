@@ -405,7 +405,7 @@ def _handshake_to_new_node(client, sid):
 			    api.encrypt_msg(s_obj.scalar('common_key_public').get(),
 			        json.dumps(message)))
 
-
+#	Coarse-Gained Control
 def _inspect_inactive_children(sid):
 	#print "inspection...{}".format(sid)
 	s_obj = WebServerModel.objects(sid=sid)
@@ -554,7 +554,7 @@ def _update_last_access_time(nid, sid):
 			})
 	return True if result.modified_count == 1 and result.matched_count == 1 else False
 
-
+#	Fine-Grained Control
 def process_msg_add_request(sid, uname, ssid, comment):
     ## if master fails to find slave node, try MAX_TRY times until it
     ## response 503
