@@ -629,45 +629,7 @@ def _find_usersession(secure_id, sid):
 
 def _get_server_log(sid):
 	return WebServerModel.objects(sid=sid).get().server_log
-	#for log in logs:
-	#	print log.to_json()
 
 
 
-"""
-## checking queue status 
-def queue_manager(nid, sid):
-	if q.empty():
-		return False
 
-		elif
-"""
-
-
-"""collection = WebServerModel._get_collection()
-result = collection.update_one(
-	{
-		"_id":mWebServerModel.nid
-	},
-	{
-		"$set":{
-			"public_key":"random"
-		}
-	})
-print result.modified_count
-print result.matched_count 
-print WebServerModel.objects.scalar('public_key').get()"""
-
-"""
-	logs = WebServerModel.objects.get().server_log
-	for log in logs:
-		print log.to_json()"""
-
-#WebServerModel.objects.get().server_log.append(ServerLogModel(log=log_txt))
-#WebServerModel.objects.update_one(set__children__last_access=general_api.get_current_time())
-#print WebServerModel.objects.scalar('children.id').filter(nid=cid)
-#WebServerModel.objects.update(push__server_log=ServerLogModel(log=log_txt))
-#print WebServerModel.objects.filter(nid = 'vzWNmdPzlBpFyi6').scalar('server_log.log').to_json()
-
-#    post = Post(uid='1', text="hi")
-    #updated = Feed.objects(posts__uid=post.uid).update_one(set__posts__S=post)
