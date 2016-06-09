@@ -30,8 +30,7 @@ class ChildrenModel(EmbeddedDocument):
     meta = {
         'indexes': ['-created_at', 'sid'],
         'ordering': ['-created_at'],
-        'title': 'children',
-        'slug': 'app clients are here, contains different restricted info from AppModel'
+        'title': 'children'
     }
 
 
