@@ -104,7 +104,7 @@ def decrypt_msg(private_key, encrypted_msg):
 	
 ## Fault tolerance and recovery
 	A number of master nodes(also alias coordinators) 
-	can be running run concurrently. 
+	can be running concurrently. 
 	By doing so, the system is able to handle 
 	case of one of the master nodes' failure.
 	Once the failure happens, involved worker nodes will automatically 
