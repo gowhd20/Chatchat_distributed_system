@@ -56,6 +56,24 @@ HOST_ADDR = "192.168.10.102"
 ID_OF_MN = 0
 SESSION_EXTENDED_BY = 30
 
+## some info ##
+"""
+- SHA-256 hash allows to safely encipher data of 0 to 190 octets
+- used hybrid cryptosystem with padding
+- Block cipher algorithms like AES and Triple DES in Electronic Code Book (ECB) and Cipher Block Chaining (CBC) mode require their input to be an exact multiple of the block size
+- might have weakness in Adaptive chosen-ciphertext attack (abbreviated as CCA2)
+- OAEP utilised here has been proven secure
+- AES uses 16 bytes where as DES uses 64bits/8bytes => break up message into 8 bytes' block
+
+Conventional methodology for padding
+1. Pad with bytes all of the same value as the number of padding bytes -> Most popular! (called PKCS padding)
+2. Pad with 0x80 followed by zero bytes
+3. Pad with zeroes except make the last byte equal to the number of padding bytes
+4. Pad with zero (null) characters
+
+"""
+## some info ##
+
 
 ## Advanced Encryption Standard
 ## encrypt text with aes, generate iv and wrap altogether in json format with nonce from cipher
@@ -95,6 +113,7 @@ def _encrypt_rsa(public_key, key):
 
 
 ## Is needed as the size of message differs each time
+## It pads string into the length of multiple of 16 in order for AES encryption
 def _padding(txt):
     return txt+(AES.block_size-len(txt)%AES.block_size)*chr(AES.block_size-len(txt)%AES.block_size)
 
