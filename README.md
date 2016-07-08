@@ -19,6 +19,9 @@ This system is built on web
 	- MongoDB
 	- Redis
 	
+## Architecture
+![alt tag](https://raw.github.com/gowhd20/Chatchat_distributed_system/master/document/architecture_image.png)
+	
 ## Featured security
 Encryption
 ```python
